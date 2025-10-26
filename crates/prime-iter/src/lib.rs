@@ -3,7 +3,6 @@
 //! ## Features
 //!
 //! - Generates prime numbers on demand as an iterator
-//! - Efficient composite number management using a hash map
 //! - Supports arbitrary integer types (`usize`, `u32`, `i8`, etc.)
 //! - The iterator terminates after returning all prime numbers within the range that can be handled by the specified data type.
 //!
@@ -24,20 +23,19 @@
 //! println!("{:?}", primes_under_100);
 //! ```
 //!
-//! ## Type Constraints & Notes
+//! ## Type Constraints
 //!
-//! - Type `T` must satisfy `num_traits::PrimInt + Hash + Eq`.
-//! - Overflow will occur if the type's maximum value is exceeded.
-//! - Not thread-safe (internally uses `FxHashMap`).
+//! - Type `T` must satisfy `num_traits::PrimInt`.
 //!
 //! ## Performance
 //!
-//! - Memory usage depends on the prime range, as composite numbers are managed with a hash map.
+//! - Memory usage depends on the prime range, as composite numbers are managed with a BTreeMap.
 //! - Be cautious of memory consumption when handling large values.
 //!
 //! ## References
 //!
 //! - [Sieve of Eratosthenes - Wikipedia](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)
+//!   - Incremental sieve
 
 use std::collections::BTreeMap;
 use std::iter::successors;
@@ -54,7 +52,7 @@ struct PrimeSieveIter<T: num_traits::PrimInt> {
 ///
 /// The iterator starts from the smallest prime number (2) and continues
 /// until the maximum value of the specified type is reached,
-/// generating prime numbers using a modified Sieve of Eratosthenes algorithm.
+/// generating prime numbers using an incremental sieve algorithm.
 ///
 /// ## Type Parameters
 ///
@@ -86,30 +84,31 @@ impl<T: num_traits::PrimInt> Iterator for PrimeSieveIter<T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let two = T::from(2u8).expect("never fails");
-        let curr = self.next_candidate?;
-        if curr == two {
+        let current = self.next_candidate?;
+        if current == two {
             self.next_candidate = T::from(3u8);
             return Some(two);
         }
 
         loop {
-            let curr = self.next_candidate?;
-            self.next_candidate = curr.checked_add(&two);
-            if let Some(stride) = self.sieve_map.remove(&curr) {
+            let current = self.next_candidate?;
+            self.next_candidate = current.checked_add(&two);
+            if let Some(stride) = self.sieve_map.remove(&current) {
                 // composite number
                 if let Some(next_composite) =
-                    successors(curr.checked_add(&stride), |&n| n.checked_add(&stride))
+                    successors(current.checked_add(&stride), |&n| n.checked_add(&stride))
                         .find(|n| !self.sieve_map.contains_key(n))
                 {
                     self.sieve_map.insert(next_composite, stride);
                 }
             } else {
                 // prime number
-                if let Some(next_composite) = curr.checked_mul(&curr) {
-                    // `curr * 2` will not overflow because `curr * 2 < multiple`.
-                    self.sieve_map.insert(next_composite, curr * two);
+                if let Some(next_composite) = current.checked_mul(&current) {
+                    // `stride` will not overflow because `current * 2 < next_composite`.
+                    let stride = current * two;
+                    self.sieve_map.insert(next_composite, stride);
                 }
-                return Some(curr);
+                return Some(current);
             }
         }
     }
