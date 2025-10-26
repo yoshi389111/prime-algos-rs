@@ -1,0 +1,11 @@
+[package]
+name = "yoshi389111-prime-iter"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "An iterator that generates prime numbers sequentially using a memory-efficient algorithm."
+repository = "https://github.com/yoshi389111/prime-algos-rs"
+keywords = ["prime", "iterator", "math"]
+
+[dependencies]
+num-traits = "0.2.19"
