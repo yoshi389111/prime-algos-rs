@@ -157,6 +157,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "yoshi389111-next-prime"
+version = "0.1.0"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "once_cell",
+ "yoshi389111-miller-rabin",
+ "yoshi389111-prime-iter",
+]
+
+[[package]]
 name = "yoshi389111-prime-iter"
 version = "0.1.0"
 dependencies = [
