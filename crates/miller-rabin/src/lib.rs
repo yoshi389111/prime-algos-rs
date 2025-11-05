@@ -29,22 +29,29 @@
 use num_bigint::{BigUint, RandBigInt};
 use once_cell::sync::Lazy;
 
+/// Maximum prime number for trial division
+const MAX_SMALL_PRIME: usize = 10_000;
+
 /// A list of small prime numbers for trial division
 static PRIMES: Lazy<Vec<BigUint>> = Lazy::new(|| {
     yoshi389111_prime_iter::new::<usize>()
-        .take_while(|p| *p < 10_000_usize)
+        .take_while(|p| *p <= MAX_SMALL_PRIME)
         .map(BigUint::from)
         .collect()
 });
 
-/// Zero constant for BigUint
+/// Threshold for using trial division only
+static TRIAL_DIVISION_ONLY_THRESHOLD: Lazy<BigUint> =
+    Lazy::new(|| BigUint::from(MAX_SMALL_PRIME * MAX_SMALL_PRIME));
+
+/// BigUint value for zero
 static ZERO: Lazy<BigUint> = Lazy::new(|| BigUint::from(0u8));
-/// One constant for BigUint
+/// BigUint value for one
 static ONE: Lazy<BigUint> = Lazy::new(|| BigUint::from(1u8));
-/// Two constant for BigUint
+/// BigUint value for two
 static TWO: Lazy<BigUint> = Lazy::new(|| BigUint::from(2u8));
 
-/// Check if a BigUint number is probably prime using trial division and Miller-Rabin test
+/// Check if a BigUint is probably prime using trial division and the Miller-Rabin test
 ///
 /// ## Params
 ///
@@ -77,11 +84,21 @@ pub fn is_probable_prime_with_rng<R: rand::Rng + ?Sized>(
         return false;
     }
 
+    if w <= &TRIAL_DIVISION_ONLY_THRESHOLD {
+        // use only trial division for small numbers
+        for p in PRIMES.iter() {
+            if w == p {
+                return true;
+            }
+            if w % p == *ZERO {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // trial division by small primes
     for p in PRIMES.iter() {
-        if w == p {
-            return true;
-        }
         if w % p == *ZERO {
             return false;
         }
@@ -145,7 +162,7 @@ pub fn is_probable_prime(w: &BigUint, iter: usize) -> bool {
 ///
 /// ## Notes
 ///
-/// Negative numbers and zero cannot be prime by definition, so this function always returns `false` for such inputs.
+/// Negative numbers and zero are not prime by definition, so this function always returns `false` for such inputs.
 ///
 /// ## Params
 ///
