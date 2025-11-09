@@ -9,3 +9,4 @@ keywords = ["prime", "iterator", "math"]
 
 [dependencies]
 num-traits = "0.2.19"
+rustc-hash = "2.1.1"

@@ -37,12 +37,13 @@
 //! - [Sieve of Eratosthenes - Wikipedia](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)
 //!   - Incremental sieve
 
-use std::collections::BTreeMap;
+use rustc_hash::FxHashMap;
+use std::hash::Hash;
 use std::iter::successors;
 
 /// Internal state for the prime number iterator using a sieve algorithm.
-struct PrimeSieveIter<T: num_traits::PrimInt> {
-    sieve_map: BTreeMap<T, T>,
+struct PrimeSieveIter<T: num_traits::PrimInt + Hash> {
+    sieve_map: FxHashMap<T, T>,
     next_candidate: Option<T>,
 }
 
@@ -72,14 +73,14 @@ struct PrimeSieveIter<T: num_traits::PrimInt> {
 /// assert_eq!(primes.next(), Some(7));
 /// assert_eq!(primes.next(), Some(11));
 /// ```
-pub fn new<T: num_traits::PrimInt>() -> impl Iterator<Item = T> {
+pub fn new<T: num_traits::PrimInt + Hash>() -> impl Iterator<Item = T> {
     PrimeSieveIter {
-        sieve_map: BTreeMap::new(),
+        sieve_map: FxHashMap::default(),
         next_candidate: T::from(2u8),
     }
 }
 
-impl<T: num_traits::PrimInt> Iterator for PrimeSieveIter<T> {
+impl<T: num_traits::PrimInt + Hash> Iterator for PrimeSieveIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
